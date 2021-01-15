@@ -4,7 +4,7 @@ Automatically edits videos. Explanation here: https://www.youtube.com/watch?v=DQ
 
 ## Description
 
-This tool originates from [jumpcutter](https://github.com/carykh/jumpcutter) by carykh. 
+**This tool originates from [jumpcutter](https://github.com/carykh/jumpcutter) by carykh.** 
 
 It can be used to cut or speed up/down the silence parts of any videos you want. It is quite useful when you are a tutorial or a vlog maker. Check out the video above to see what it can do.
 
@@ -18,9 +18,9 @@ It can be used to cut or speed up/down the silence parts of any videos you want.
 
 ## What did I do
 
-The original python code runs quite well but it is a bit difficult to add more feature to it. So I did some refactor work at first. 
+The original python code from [jumpcutter](https://github.com/carykh/jumpcutter) by carykh runs quite well but it is a bit difficult to add more features to it. So I did some refactor work at first. 
 
-And, added support for edl file generating.
+And, added some supports for edl file generating.
 
 Finally, simplified the audio/video processing the make it run faster. 
 
