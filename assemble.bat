@@ -1,11 +1,11 @@
-WORKING_DIR=$(cd $(dirname $0) && pwd -P)
-cd $WORKING_DIR
-pwd
-
+@echo off
+echo %~dp0
+pushd %~dp0
 pip3 install -r requirements.txt
 pyinstaller jumpcutter.py --onefile
 
-# copy ffmpeg
-cp $(ls $(which ffmpeg)) dist/ 
+for /f %%i in ('where.exe ffmpeg') do set RESULT=%%i
+copy %RESULT% dist\
 
-cd -
+popd
+@echo on

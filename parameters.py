@@ -20,7 +20,7 @@ class InputParameter:
 
     def __init__(self, *args, input_file=None,
                  url=None,
-                 output_type="video",
+                 output_type=None,
                  output_file=None,
                  silent_threshold=None,
                  sounded_speed=None,
@@ -29,7 +29,7 @@ class InputParameter:
                  sample_rate=None,
                  frame_rate=None,
                  frame_quality=None,
-                 temp_folder=".temp"):
+                 temp_folder=None):
 
         parser = argparse.ArgumentParser(
             description='Modifies a video file to play at different speeds '

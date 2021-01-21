@@ -82,7 +82,7 @@ class VideoOutput(BaseOutput):
         super().__init__(*args, **kwargs)
 
         if not self.parameter.output_file:
-            self.parameter.output_file = f'{self.input_file_name_without_extension}_edited{self.input_file_name.rfind("."):}'
+            self.parameter.output_file = f'{self.input_file_name_without_extension}_edited{self.input_file_name[self.input_file_name.rfind("."):]}'
 
         do_shell(f'ffmpeg -i "{self.parameter.input_file}" -qscale:v {str(self.parameter.frame_quality)} {self.parameter.temp_folder}/frame%06d.jpg -hide_banner')
 
