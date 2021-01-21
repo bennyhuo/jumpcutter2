@@ -1,6 +1,7 @@
 import argparse
 import math
 import re
+import sys
 
 import numpy as np
 from scipy.io import wavfile
@@ -75,9 +76,12 @@ class InputParameter:
         else:
             self.input_file = input_file or args.input_file
 
-        self.frame_quality = frame_quality or args.frame_quality
+        # input_file is required
+        if not self.input_file:
+            parser.print_help()
+            sys.exit(-1)
 
-        assert self.input_file, "why u put no input file, that dum"
+        self.frame_quality = frame_quality or args.frame_quality
 
         self.output_type = output_type or args.output_type
         self.output_file = output_file or args.output_file
