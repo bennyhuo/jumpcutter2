@@ -29,7 +29,9 @@ class InputParameter:
                  sample_rate=None,
                  frame_rate=None,
                  frame_quality=None,
-                 temp_folder=None):
+                 temp_folder=None,
+                 keep_start=None,
+                 keep_end=None):
 
         parser = argparse.ArgumentParser(
             description='Modifies a video file to play at different speeds '
@@ -61,6 +63,11 @@ class InputParameter:
         parser.add_argument('--temp_folder', type=str, default=".temp",
                             help="temp folder for intermediates process.")
 
+        parser.add_argument('--keep_start', type=int, default=0,
+                            help="Seconds for not cutting from start.")
+        parser.add_argument('--keep_end', type=int, default=0,
+                            help="Seconds for not cutting from end.")
+
         args = parser.parse_args()
 
         self.temp_folder = temp_folder or args.temp_folder
@@ -86,6 +93,9 @@ class InputParameter:
         self.output_type = output_type or args.output_type
         self.output_file = output_file or args.output_file
         self.frame_rate = frame_rate or args.frame_rate
+
+        self.keep_frames_from_start = self.frame_rate * (keep_start or args.keep_start)
+        self.keep_frames_from_end = self.frame_rate * (keep_end or args.keep_end)
 
         self.audio_fade_envelope_size = 400
 

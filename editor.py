@@ -17,13 +17,23 @@ class Editor:
     def get_loud_frame(self):
         has_loud_audio = np.zeros(self.parameter.audio_frame_count)
 
-        for i in range(self.parameter.audio_frame_count):
+        # keep start
+        for i in range(0, self.parameter.keep_frames_from_start):
+            has_loud_audio[i] = 1
+
+        # check content
+        frames_count_to_cut = self.parameter.audio_frame_count - self.parameter.keep_frames_from_end
+        for i in range(self.parameter.keep_frames_from_start, frames_count_to_cut):
             start = int(i * self.parameter.samples_per_frame)
             end = min(int((i + 1) * self.parameter.samples_per_frame), self.parameter.audio_sample_count)
             audio_chunks = self.parameter.audio_data[start:end]
             max_chunks_volume = float(get_max_volume(audio_chunks)) / self.parameter.max_audio_volume
             if max_chunks_volume >= self.parameter.silent_threshold:
                 has_loud_audio[i] = 1
+
+        # keep end
+        for i in range(frames_count_to_cut, self.parameter.audio_frame_count):
+            has_loud_audio[i] = 1
 
         return has_loud_audio
 
