@@ -31,7 +31,8 @@ class InputParameter:
                  frame_quality=None,
                  temp_folder=None,
                  keep_start=None,
-                 keep_end=None):
+                 keep_end=None,
+                 use_hardware_acc=None):
 
         parser = argparse.ArgumentParser(
             description='Modifies a video file to play at different speeds '
@@ -67,6 +68,8 @@ class InputParameter:
                             help="Seconds for not cutting from start.")
         parser.add_argument('--keep_end', type=int, default=0,
                             help="Seconds for not cutting from end.")
+        parser.add_argument('--use_hardware_acc', type=int, default=0,
+                            help="[Experimental] Nvidia nvenc is needed for this.")
 
         args = parser.parse_args()
 
@@ -98,6 +101,7 @@ class InputParameter:
         self.keep_frames_from_end = self.frame_rate * (keep_end or args.keep_end)
 
         self.audio_fade_envelope_size = 400
+        self.use_hardware_acc = use_hardware_acc or args.use_hardware_acc
 
     def __enter__(self):
         io_utils.create_path(self.temp_folder)

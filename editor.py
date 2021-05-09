@@ -5,7 +5,7 @@ from audiotsm import phasevocoder
 from audiotsm.io.array import ArrayReader, ArrayWriter
 
 from edit_point import EditPoint
-from outputs import EdlOutput, VideoOutput
+from outputs import EdlOutput, DirectVideoOutput
 from parameters import InputParameter, get_max_volume
 
 
@@ -53,7 +53,7 @@ class Editor:
 
     def get_output(self):
         return EdlOutput(parameter=self.parameter) if self.parameter.output_type == 'edl' \
-            else VideoOutput(parameter=self.parameter)
+            else DirectVideoOutput(parameter=self.parameter)
 
     def fade_out_silence(self, audio_data):
         fade_mask = np.arange(self.parameter.audio_fade_envelope_size) / self.parameter.audio_fade_envelope_size

@@ -76,7 +76,53 @@ class EdlOutput(BaseOutput):
         self.edl_file.close()
 
 
-class VideoOutput(BaseOutput):
+class DirectVideoOutput(BaseOutput):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.parameter.output_file:
+            self.parameter.output_file = f'{self.input_file_name_without_extension}_edited{self.input_file_name[self.input_file_name.rfind("."):]}'
+        self.audio_edit_config = []
+        self.video_edit_config = []
+
+    def apply_edit_point(self, edit_point: EditPoint, audio_data, start_output_frame, end_output_frame):
+        edit_point_output_start = Timecode(self.parameter.frame_rate, frames=start_output_frame + 1)
+        edit_point_output_end = Timecode(self.parameter.frame_rate, frames=end_output_frame + 1)
+
+        # provide one frame buffer for motion events. if the output length is less than 2 frames, cut it off.
+        if edit_point_output_end.frames - edit_point_output_start.frames <= 1:
+            edit_point_start = Timecode(self.parameter.frame_rate, frames=edit_point.start_frame + 1)
+            edit_point_end = Timecode(self.parameter.frame_rate, frames=edit_point.end_frame + 1)
+            self.video_edit_config.append(f"between(n, {edit_point_start.frames}, {edit_point_end.frames - 1})")
+            self.audio_edit_config.append(f"between(t, {edit_point_start.float}, {edit_point_end.float})")
+
+    def close(self):
+        with open(f"{self.parameter.temp_folder}/filter_script.txt", "w", encoding=OS_ENCODING) as config_file:
+            config_file.write("select='not(\n")
+            config_file.write("+".join(self.video_edit_config))
+            config_file.write(")',setpts=N/FR/TB; \n")
+
+            config_file.write("aselect='not(\n")
+            config_file.write("+".join(self.audio_edit_config))
+            config_file.write(")', asetpts=N/SR/TB\n")
+
+        # Use ffmpeg filter to cut videos directly.
+        if self.parameter.use_hardware_acc:
+            do_shell(
+                f'ffmpeg -hwaccel cuda -thread_queue_size 1024 '
+                f'-y -filter_complex_script {self.parameter.temp_folder}/filter_script.txt '
+                f'-i {self.parameter.input_file} -c:v h264_nvenc "{self.parameter.output_file}"'
+            )
+        else:
+            do_shell(
+                f'ffmpeg -thread_queue_size 1024 '
+                f'-y -filter_complex_script {self.parameter.temp_folder}/filter_script.txt '
+                f'-i {self.parameter.input_file} "{self.parameter.output_file}"'
+            )
+
+
+# Deprecated. Will be removed soon.
+class LegacyVideoOutput(BaseOutput):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
