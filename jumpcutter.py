@@ -22,10 +22,11 @@ def main(*args, input_file=None, output_file=None, **kwargs):
     output_dir: str = output_file or parsed_args.output_file
 
     if input_dir and os.path.isdir(input_dir):
-        input_files = list(map(lambda f: os.path.join(input_dir, f), os.listdir(input_dir)))
+        input_file_names = filter(lambda f: os.path.isfile(f), os.listdir(input_dir))
+        input_files = list(map(lambda f: os.path.join(input_dir, f), input_file_names))
 
         if output_dir and os.path.isdir(output_dir):
-            output_files = map(lambda f: os.path.join(output_dir, f), os.listdir(input_dir))
+            output_files = map(lambda f: os.path.join(output_dir, f), input_file_names)
         else:
             output_files = [None] * len(input_files)
 
