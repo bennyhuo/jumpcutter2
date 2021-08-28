@@ -17,7 +17,7 @@ def main(*args, input_file=None, output_file=None, **kwargs):
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_file', type=str)
     parser.add_argument('--output_file', type=str)
-    parsed_args = parser.parse_args()
+    parsed_args, _ = parser.parse_known_args()
     input_dir: str = input_file or parsed_args.input_file
     output_dir: str = output_file or parsed_args.output_file
 
