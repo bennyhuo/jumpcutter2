@@ -18,6 +18,7 @@ class BaseOutput(object):
     def __init__(self, parameter: InputParameter):
         self.parameter = parameter
 
+        self.input_file_dir = os.path.dirname(parameter.input_file)
         self.input_file_name = os.path.basename(parameter.input_file)
         self.input_file_name_without_extension = self.input_file_name[:self.input_file_name.rfind('.')]
 
@@ -33,7 +34,10 @@ class EdlOutput(BaseOutput):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.parameter.output_file:
-            self.parameter.output_file = f'{self.input_file_name_without_extension}.edl'
+            self.parameter.output_file = os.path.join(
+                self.input_file_dir,
+                f'{self.input_file_name_without_extension}.edl'
+            )
 
         self.edl_file = open(self.parameter.output_file, "w", encoding=OS_ENCODING)
         self.edl_file.write(f'TITLE: {self.input_file_name_without_extension}\n\n')
@@ -81,7 +85,11 @@ class DirectVideoOutput(BaseOutput):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.parameter.output_file:
-            self.parameter.output_file = f'{self.input_file_name_without_extension}_edited{self.input_file_name[self.input_file_name.rfind("."):]}'
+            self.parameter.output_file = os.path.join(
+                self.input_file_dir,
+                f'{self.input_file_name_without_extension}_edited{self.input_file_name[self.input_file_name.rfind("."):]}'
+            )
+
         self.audio_edit_config = []
         self.video_edit_config = []
 
@@ -128,7 +136,10 @@ class LegacyVideoOutput(BaseOutput):
         super().__init__(*args, **kwargs)
 
         if not self.parameter.output_file:
-            self.parameter.output_file = f'{self.input_file_name_without_extension}_edited{self.input_file_name[self.input_file_name.rfind("."):]}'
+            self.parameter.output_file = os.path.join(
+                self.input_file_dir,
+                f'{self.input_file_name_without_extension}_edited{self.input_file_name[self.input_file_name.rfind("."):]}'
+            )
 
         do_shell(f'ffmpeg -i "{self.parameter.input_file}" -qscale:v {str(self.parameter.frame_quality)} {self.parameter.temp_folder}/frame%06d.jpg -hide_banner')
 
