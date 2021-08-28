@@ -4,6 +4,15 @@ import argparse
 import os
 
 
+def execute(*args, input_file, **kwargs):
+    try:
+        with InputParameter(*args, input_file=input_file, **kwargs) as parameter:
+            editor = Editor(parameter)
+            editor.execute()
+    except Exception as e:
+        print(f"Error process file {input_file} with exception: {e}")
+
+
 def main(*args, input_file=None, output_file=None, **kwargs):
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_file', type=str)
@@ -21,19 +30,10 @@ def main(*args, input_file=None, output_file=None, **kwargs):
             output_files = [None] * len(input_files)
 
         for input_file, output_file in zip(input_files, output_files):
-            with InputParameter(*args,
-                                input_file=input_file,
-                                output_file=output_file,
-                                **kwargs) as parameter:
-                editor = Editor(parameter)
-                editor.execute()
+            execute(args, input_file=input_file, output_file=output_file, **kwargs)
+
     else:
-        with InputParameter(*args,
-                            input_file=input_file,
-                            output_file=output_file,
-                            **kwargs) as parameter:
-            editor = Editor(parameter)
-            editor.execute()
+        execute(args, input_file=input_file, output_file=output_file, **kwargs)
 
 
 if __name__ == '__main__':

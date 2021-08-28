@@ -89,7 +89,7 @@ class InputParameter:
         # input_file is required
         if not self.input_file:
             parser.print_help()
-            sys.exit(-1)
+            raise Exception("input_file is required.")
 
         self.frame_quality = frame_quality or args.frame_quality
 
