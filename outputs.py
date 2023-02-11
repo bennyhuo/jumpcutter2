@@ -8,7 +8,7 @@ from timecode import Timecode
 
 from edit_point import EditPoint
 from parameters import InputParameter
-from shell_utils import do_shell
+from shell_utils import do_shell, STRING, take_until
 
 OS_ENCODING = locale.getpreferredencoding()
 
@@ -104,6 +104,31 @@ class DirectVideoOutput(BaseOutput):
             self.video_edit_config.append(f"between(n, {edit_point_start.frames}, {edit_point_end.frames - 1})")
             self.audio_edit_config.append(f"between(t, {edit_point_start.float}, {edit_point_end.float})")
 
+    def select_encoder(self):
+        if self.parameter.use_hardware_acc:
+            result = do_shell(f'ffmpeg -encoders', stdout=STRING)
+            h264_encoders = [encoder[1] for encoder in [
+                line.strip().split(' ', 2)[:2] for line in
+                take_until(result.splitlines(), lambda line: line.strip() == '------')
+            ] if encoder[0] == 'V....D' and encoder[1].startswith('h264')]
+
+            print(f'hardware h264 encoders: {h264_encoders}')
+
+            if not h264_encoders:
+                return ''
+
+            preferred_encoders = ['h264_nvenc', 'h264_videotoolbox']
+            selected_encoder = None
+            for preferred_encoder in preferred_encoders:
+                if preferred_encoder in h264_encoders:
+                    selected_encoder = preferred_encoder
+                    break
+            else:
+                selected_encoder = h264_encoders[0]
+
+            print(f'selected encoder: {selected_encoder}')
+            return f'-c:v {selected_encoder}'
+
     def close(self):
         with open(f"{self.parameter.temp_folder}/filter_script.txt", "w", encoding=OS_ENCODING) as config_file:
             config_file.write("select='not(\n")
@@ -114,19 +139,14 @@ class DirectVideoOutput(BaseOutput):
             config_file.write("+".join(self.audio_edit_config))
             config_file.write(")', asetpts=N/SR/TB\n")
 
-        # Use ffmpeg filter to cut videos directly.
-        if self.parameter.use_hardware_acc:
-            do_shell(
-                f'ffmpeg -hwaccel cuda -thread_queue_size 1024 '
-                f'-y -filter_complex_script {self.parameter.temp_folder}/filter_script.txt '
-                f'-i {self.parameter.input_file} -c:v h264_nvenc "{self.parameter.output_file}"'
-            )
-        else:
-            do_shell(
-                f'ffmpeg -thread_queue_size 1024 '
-                f'-y -filter_complex_script {self.parameter.temp_folder}/filter_script.txt '
-                f'-i {self.parameter.input_file} "{self.parameter.output_file}"'
-            )
+        # Use ffmpeg filter to cut videos directly if possible.
+        hw_encoder = self.select_encoder()
+
+        do_shell(
+            f'ffmpeg -thread_queue_size 1024 '
+            f'-y -filter_complex_script {self.parameter.temp_folder}/filter_script.txt '
+            f'-i {self.parameter.input_file} {hw_encoder} -b:v {self.parameter.bit_rate}k "{self.parameter.output_file}"'
+        )
 
 
 # Deprecated. Will be removed soon.
@@ -141,7 +161,8 @@ class LegacyVideoOutput(BaseOutput):
                 f'{self.input_file_name_without_extension}_edited{self.input_file_name[self.input_file_name.rfind("."):]}'
             )
 
-        do_shell(f'ffmpeg -i "{self.parameter.input_file}" -qscale:v {str(self.parameter.frame_quality)} {self.parameter.temp_folder}/frame%06d.jpg -hide_banner')
+        do_shell(
+            f'ffmpeg -i "{self.parameter.input_file}" -qscale:v {str(self.parameter.frame_quality)} {self.parameter.temp_folder}/frame%06d.jpg -hide_banner')
 
         self.last_existing_frame = None
         self.output_audio_data = np.zeros((0, self.parameter.audio_data.shape[1]))
@@ -152,7 +173,8 @@ class LegacyVideoOutput(BaseOutput):
 
         for outputFrame in range(start_output_frame, end_output_frame):
             input_frame = int(
-                edit_point.start_frame + self.parameter.new_speed[int(edit_point.should_keep)] * (outputFrame - start_output_frame))
+                edit_point.start_frame + self.parameter.new_speed[int(edit_point.should_keep)] * (
+                            outputFrame - start_output_frame))
             did_it_work = self.copy_frame(input_frame, outputFrame)
             if did_it_work:
                 self.last_existing_frame = input_frame

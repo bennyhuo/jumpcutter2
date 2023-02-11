@@ -28,6 +28,7 @@ class InputParameter:
                  frame_margin=None,
                  sample_rate=None,
                  frame_rate=None,
+                 bit_rate=None,
                  frame_quality=None,
                  temp_folder=None,
                  keep_start=None,
@@ -58,6 +59,8 @@ class InputParameter:
                             help="sample rate of the input and output videos")
         parser.add_argument('--frame_rate', type=float, default=30,
                             help="frame rate of the input and output videos. optional.")
+        parser.add_argument('--bit_rate', type=float, default=1000,
+                            help="bit rate of the input and output videos. optional. Default 1000kbps")
         parser.add_argument('--frame_quality', type=int, default=3,
                             help="quality of frames to be extracted from input video. "
                                  "1 is highest, 31 is lowest, 3 is the default.")
@@ -77,6 +80,7 @@ class InputParameter:
 
         self.frame_rate = frame_rate or args.frame_rate
         self.sample_rate = sample_rate or args.sample_rate
+        self.bit_rate = bit_rate or args.bit_rate
         self.silent_threshold = silent_threshold or args.silent_threshold
         self.frame_margin = frame_margin or args.frame_margin
         self.new_speed = [silent_speed or args.silent_speed, sounded_speed or args.sounded_speed]
@@ -116,11 +120,14 @@ class InputParameter:
         # try to detect frame rate
         video_parameters = do_shell(f'ffmpeg -i "{self.input_file}"', STRING, 'utf-8').split('\n')
         auto_detected_frame_rate = None
+        auto_detected_bit_rate = None
         for line in video_parameters:
-            m = re.search('Stream #.*Video.* ([0-9]*) fps', line)
+            m = re.search(r'Stream #.*Video.* (\d+) kb/s.*?(\d+) fps', line)
             if m is not None:
-                auto_detected_frame_rate = float(m.group(1))
+                auto_detected_bit_rate = float(m.group(1))
+                auto_detected_frame_rate = float(m.group(2))
 
+        self.bit_rate = auto_detected_bit_rate or self.bit_rate
         self.frame_rate = auto_detected_frame_rate or self.frame_rate
         self.samples_per_frame = self.audio_sample_rate / self.frame_rate
 
