@@ -72,7 +72,7 @@ class InputParameter:
         parser.add_argument('--keep_end', type=int, default=0,
                             help="Seconds for not cutting from end.")
         parser.add_argument('--use_hardware_acc', type=int, default=0,
-                            help="[Experimental] Nvidia nvenc is needed for this.")
+                            help="[Experimental] Enable hardware acceleration when encoding.")
 
         args = parser.parse_args()
 
