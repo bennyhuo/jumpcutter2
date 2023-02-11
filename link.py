@@ -13,9 +13,13 @@ print(PROJECT_ROOT)
 
 shebang_line = ''
 file_ext = ''
+all_args = '$@'
+args1 = '$1'
 if sys.platform == 'win32':
-    activate_env = f'{PROJECT_ROOT}\\venv\\bin\\activate\n'
-    file_ext = '.bat'
+    activate_env = f'{PROJECT_ROOT}\\venv\\Scripts\\activate\n'
+    file_ext = '.ps1'
+    all_args = '$args'
+    args1 = '$args[0]'
 else:
     activate_env = f'source {PROJECT_ROOT}/venv/bin/activate\n'
     shebang_line = '#!/bin/zsh\n'
@@ -24,12 +28,12 @@ link_file = os.path.join(BIN_ROOT, f'jumpcutter{file_ext}')
 with open(link_file, 'w') as file:
     file.write(shebang_line)
     file.write(activate_env)
-    file.write(f'python3 {PROJECT_ROOT}/jumpcutter.py $@')
+    file.write(f'python3 {PROJECT_ROOT}{os.sep}jumpcutter.py {all_args}')
 
 short_cut = os.path.join(BIN_ROOT, f'jumpcut{file_ext}')
 with open(short_cut, 'w') as file:
     file.write(shebang_line)
-    file.write(f'{link_file} --input $1 --silent_speed 9999 --frame_margin 3 '
+    file.write(f'{link_file} --input {args1} --silent_speed 9999 --frame_margin 3 '
                f'--keep_start 4 --keep_end 3 --use_hardware_acc 1 --silent_threshold 0.005\n')
 
 os.chmod(link_file, stat.S_IREAD | stat.S_IEXEC | stat.S_IWUSR)
