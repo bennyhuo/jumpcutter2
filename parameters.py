@@ -111,7 +111,7 @@ class InputParameter:
         io_utils.create_path(self.temp_folder)
 
         do_shell(f'ffmpeg -i "{self.input_file}" -ab 160k -ac 2 -ar '
-                 f'{str(self.sample_rate)} -vn {self.temp_folder}/audio.wav')
+                 f'{str(self.sample_rate)} -vn "{self.temp_folder}/audio.wav"')
 
         self.audio_sample_rate, self.audio_data = wavfile.read(f"{self.temp_folder}/audio.wav")
         self.audio_sample_count = self.audio_data.shape[0]

@@ -144,8 +144,8 @@ class DirectVideoOutput(BaseOutput):
 
         do_shell(
             f'ffmpeg -thread_queue_size 1024 '
-            f'-y -filter_complex_script {self.parameter.temp_folder}/filter_script.txt '
-            f'-i {self.parameter.input_file} {hw_encoder} -b:v {self.parameter.bit_rate}k "{self.parameter.output_file}"'
+            f'-y -filter_complex_script "{self.parameter.temp_folder}/filter_script.txt" '
+            f'-i "{self.parameter.input_file}" {hw_encoder} -b:v {self.parameter.bit_rate}k "{self.parameter.output_file}"'
         )
 
 
@@ -162,7 +162,7 @@ class LegacyVideoOutput(BaseOutput):
             )
 
         do_shell(
-            f'ffmpeg -i "{self.parameter.input_file}" -qscale:v {str(self.parameter.frame_quality)} {self.parameter.temp_folder}/frame%06d.jpg -hide_banner')
+            f'ffmpeg -i "{self.parameter.input_file}" -qscale:v {str(self.parameter.frame_quality)} "{self.parameter.temp_folder}/frame%06d.jpg" -hide_banner')
 
         self.last_existing_frame = None
         self.output_audio_data = np.zeros((0, self.parameter.audio_data.shape[1]))
@@ -196,5 +196,5 @@ class LegacyVideoOutput(BaseOutput):
 
         do_shell(
             f'ffmpeg -thread_queue_size 1024 -framerate {str(self.parameter.frame_rate)} '
-            f'-i {self.parameter.temp_folder}/newFrame%06d.jpg -i {self.parameter.temp_folder}/audioNew.wav -strict -2 "{self.parameter.output_file}"'
+            f'-i "{self.parameter.temp_folder}/newFrame%06d.jpg" -i "{self.parameter.temp_folder}/audioNew.wav" -strict -2 "{self.parameter.output_file}"'
         )
