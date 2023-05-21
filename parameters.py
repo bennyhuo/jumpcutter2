@@ -99,6 +99,11 @@ class InputParameter:
 
         self.output_type = output_type or args.output_type
         self.output_file = output_file or args.output_file
+        if self.output_type != 'edl' and not args.output_file:
+            # default video output path
+            self.replace = True
+            print("The input file will be replaced with the output file.")
+
         self.frame_rate = frame_rate or args.frame_rate
 
         self.keep_frames_from_start = self.frame_rate * (keep_start or args.keep_start)

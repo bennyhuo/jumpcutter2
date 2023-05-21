@@ -16,7 +16,7 @@ file_ext = ''
 all_args = '$@'
 args1 = '$1'
 if sys.platform == 'win32':
-    activate_env = f'{PROJECT_ROOT}\\venv\\Scripts\\activate\n'
+    activate_env = f'{PROJECT_ROOT}\\venv\\Scripts\\activate.ps1\n'
     file_ext = '.ps1'
     all_args = '$args'
     args1 = '$args[0]'
@@ -29,6 +29,7 @@ with open(link_file, 'w') as file:
     file.write(shebang_line)
     file.write(activate_env)
     file.write(f'python3 {PROJECT_ROOT}{os.sep}jumpcutter.py {all_args}')
+    file.write('deactivate\n')
 
 short_cut = os.path.join(BIN_ROOT, f'jumpcut{file_ext}')
 with open(short_cut, 'w') as file:

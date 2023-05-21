@@ -5,3 +5,4 @@ numpy
 pytube
 timecode
 pyinstaller
+send2trash

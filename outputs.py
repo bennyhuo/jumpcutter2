@@ -148,6 +148,14 @@ class DirectVideoOutput(BaseOutput):
             f'-i "{self.parameter.input_file}" {hw_encoder} -b:v {self.parameter.bit_rate}k "{self.parameter.output_file}"'
         )
 
+        if self.parameter.replace:
+            from send2trash import send2trash
+
+            send2trash(self.parameter.input_file)
+            os.rename(self.parameter.output_file, self.parameter.input_file)
+            print(f"Output file: {self.parameter.output_file}")
+
+
 
 # Deprecated. Will be removed soon.
 class LegacyVideoOutput(BaseOutput):
