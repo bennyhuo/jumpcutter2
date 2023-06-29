@@ -128,6 +128,7 @@ class DirectVideoOutput(BaseOutput):
 
             print(f'selected encoder: {selected_encoder}')
             return f'-c:v {selected_encoder}'
+        return ''
 
     def close(self):
         with open(f"{self.parameter.temp_folder}/filter_script.txt", "w", encoding=OS_ENCODING) as config_file:
@@ -147,6 +148,9 @@ class DirectVideoOutput(BaseOutput):
             f'-y -filter_complex_script "{self.parameter.temp_folder}/filter_script.txt" '
             f'-i "{self.parameter.input_file}" {hw_encoder} -b:v {self.parameter.bit_rate}k "{self.parameter.output_file}"'
         )
+
+        if not os.path.exists(self.parameter.output_file):
+            raise FileExistsError(f"{self.parameter.output_file} is not existing. Check the errors before.")
 
         if self.parameter.replace:
             from send2trash import send2trash
