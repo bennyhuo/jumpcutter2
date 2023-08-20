@@ -22,6 +22,7 @@ class InputParameter:
                  url=None,
                  output_type=None,
                  output_file=None,
+                 mapping=None,
                  silent_threshold=None,
                  sounded_speed=None,
                  silent_speed=None,
@@ -44,6 +45,9 @@ class InputParameter:
         parser.add_argument('--output_file', type=str, default="",
                             help="the output file. "
                                  "(optional. if not included, it'll just modify the input file name)")
+        parser.add_argument('--mapping', type=str, default="",
+                            help="Time mapping should be applied to the input file."
+                                 "(optional)")
         parser.add_argument('--silent_threshold', type=float, default=0.03,
                             help='the volume amount that frames\' audio needs to surpass to be consider "sounded". '
                                  'It ranges from 0 (silence) to 1 (max volume)')
@@ -102,6 +106,7 @@ class InputParameter:
         self.replace = self.output_type != 'edl' and not args.output_file
         if self.replace:
             print("The input file will be replaced with the output file.")
+        self.mapping = mapping or args.mapping
 
         self.frame_rate = frame_rate or args.frame_rate
 

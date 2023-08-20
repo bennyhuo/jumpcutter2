@@ -22,11 +22,22 @@ class BaseOutput(object):
         self.input_file_name = os.path.basename(parameter.input_file)
         self.input_file_name_without_extension = self.input_file_name[:self.input_file_name.rfind('.')]
 
+        self.mappings = []
+
     def apply_edit_point(self, edit_point: EditPoint, audio_data, start_output_frame, end_output_frame):
-        pass
+        if self.parameter.mapping:
+            edit_point_output_start = Timecode(self.parameter.frame_rate, frames=start_output_frame + 1)
+            edit_point_output_end = Timecode(self.parameter.frame_rate, frames=end_output_frame + 1)
+
+            edit_point_start = Timecode(self.parameter.frame_rate, frames=edit_point.start_frame + 1)
+            edit_point_end = Timecode(self.parameter.frame_rate, frames=edit_point.end_frame + 1)
+            self.mappings.append(f"{edit_point_end} {edit_point_output_end}")
 
     def close(self):
-        pass
+        if self.parameter.mapping:
+            with open(self.parameter.mapping, 'w') as mapping_file:
+                for mapping in self.mappings:
+                    mapping_file.write(f"{mapping}\n")
 
 
 class EdlOutput(BaseOutput):
@@ -45,6 +56,8 @@ class EdlOutput(BaseOutput):
         self.index = 1
 
     def apply_edit_point(self, edit_point: EditPoint, audio_data, start_output_frame, end_output_frame):
+        super().apply_edit_point(edit_point, audio_data, start_output_frame, end_output_frame)
+
         edit_point_output_start = Timecode(self.parameter.frame_rate, frames=start_output_frame + 1)
         edit_point_output_end = Timecode(self.parameter.frame_rate, frames=end_output_frame + 1)
         # provide one frame buffer for motion events. if the output length is less than 2 frames, cut it off.
@@ -77,6 +90,7 @@ class EdlOutput(BaseOutput):
             self.index += 1
 
     def close(self):
+        super().close()
         self.edl_file.close()
 
 
@@ -94,6 +108,8 @@ class DirectVideoOutput(BaseOutput):
         self.video_edit_config = []
 
     def apply_edit_point(self, edit_point: EditPoint, audio_data, start_output_frame, end_output_frame):
+        super().apply_edit_point(edit_point, audio_data, start_output_frame, end_output_frame)
+
         edit_point_output_start = Timecode(self.parameter.frame_rate, frames=start_output_frame + 1)
         edit_point_output_end = Timecode(self.parameter.frame_rate, frames=end_output_frame + 1)
 
@@ -131,6 +147,7 @@ class DirectVideoOutput(BaseOutput):
         return ''
 
     def close(self):
+        super().close()
         with open(f"{self.parameter.temp_folder}/filter_script.txt", "w", encoding=OS_ENCODING) as config_file:
             config_file.write("select='not(\n")
             config_file.write("+".join(self.video_edit_config))
@@ -180,6 +197,8 @@ class LegacyVideoOutput(BaseOutput):
         self.output_audio_data = np.zeros((0, self.parameter.audio_data.shape[1]))
 
     def apply_edit_point(self, edit_point: EditPoint, audio_data, start_output_frame, end_output_frame):
+        super().apply_edit_point(edit_point, audio_data, start_output_frame, end_output_frame)
+
         self.output_audio_data = np.concatenate(
             (self.output_audio_data, audio_data / self.parameter.max_audio_volume))
 
@@ -204,6 +223,7 @@ class LegacyVideoOutput(BaseOutput):
         return True
 
     def close(self):
+        super().close()
         wavfile.write(f'{self.parameter.temp_folder}/audioNew.wav', self.parameter.sample_rate, self.output_audio_data)
 
         do_shell(
