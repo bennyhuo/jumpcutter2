@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import math
+import os.path
 import re
 
 import numpy as np
@@ -102,6 +103,11 @@ class InputParameter:
         else:
             self.input_file = input_file or args.input_file
         self.input_sections = input_sections or args.input_sections
+        if not self.input_sections:
+            detected_section_file = f"{self.input_file.rsplit('.', 1)[0]}.sec"
+            if os.path.exists(detected_section_file):
+                self.input_sections = detected_section_file
+                print(f"Auto detected sections file: {detected_section_file}")
 
         # input_file is required
         if not self.input_file:
