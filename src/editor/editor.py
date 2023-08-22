@@ -4,8 +4,8 @@ import numpy as np
 from audiotsm import phasevocoder
 from audiotsm.io.array import ArrayReader, ArrayWriter
 
-from edit_point import EditPoint
-from outputs import EdlOutput, DirectVideoOutput
+from editor.edit_point import EditPoint
+from editor.outputs import EdlOutput, DirectVideoOutput
 from parameters import InputParameter, get_max_volume
 
 

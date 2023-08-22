@@ -6,9 +6,11 @@ import numpy as np
 from scipy.io import wavfile
 from timecode import Timecode
 
-from edit_point import EditPoint
+from editor.edit_point import EditPoint
+from editor.section import Section
 from parameters import InputParameter
-from shell_utils import do_shell, STRING, take_until
+from utils.shell_utils import do_shell, STRING, take_until
+from utils.timecode_utils import format_timecode
 
 OS_ENCODING = locale.getpreferredencoding()
 
@@ -104,8 +106,13 @@ class DirectVideoOutput(BaseOutput):
                 f'{self.input_file_name_without_extension}_edited{self.input_file_name[self.input_file_name.rfind("."):]}'
             )
 
+        self.output_video_frame_count = self.parameter.video_frame_count
         self.audio_edit_config = []
         self.video_edit_config = []
+
+        if self.parameter.input_sections:
+            with open(self.parameter.input_sections, 'r', encoding='utf-8') as toc_file:
+                self.sections = Section.parse(toc_file.read(), self.parameter.frame_rate)
 
     def apply_edit_point(self, edit_point: EditPoint, audio_data, start_output_frame, end_output_frame):
         super().apply_edit_point(edit_point, audio_data, start_output_frame, end_output_frame)
@@ -119,6 +126,12 @@ class DirectVideoOutput(BaseOutput):
             edit_point_end = Timecode(self.parameter.frame_rate, frames=edit_point.end_frame + 1)
             self.video_edit_config.append(f"between(n, {edit_point_start.frames}, {edit_point_end.frames - 1})")
             self.audio_edit_config.append(f"between(t, {edit_point_start.float}, {edit_point_end.float})")
+
+            self.output_video_frame_count -= edit_point_end.frames - edit_point_start.frames
+
+            if self.sections:
+                for section in self.sections:
+                    section.apply_edit_point(edit_point)
 
     def select_encoder(self):
         if self.parameter.use_hardware_acc:
@@ -148,14 +161,29 @@ class DirectVideoOutput(BaseOutput):
 
     def close(self):
         super().close()
-        with open(f"{self.parameter.temp_folder}/filter_script.txt", "w", encoding=OS_ENCODING) as config_file:
+        with open(f"{self.parameter.temp_folder}/filter_script.txt", "w", encoding='utf-8') as config_file:
             config_file.write("select='not(\n")
             config_file.write("+".join(self.video_edit_config))
-            config_file.write(")',setpts=N/FR/TB; \n")
+            config_file.write(")',setpts=N/FR/TB[a]; \n")
 
             config_file.write("aselect='not(\n")
             config_file.write("+".join(self.audio_edit_config))
-            config_file.write(")', asetpts=N/SR/TB\n")
+            config_file.write(")', asetpts=N/SR/TB")
+
+            if self.sections:
+                config_file.write(";\n")
+                config_file.write(f"color=c=#55555555:s={self.parameter.video_width}x50[bar];\n")
+                config_file.write(f"[a][bar]overlay=w*n/{self.output_video_frame_count}-w:H-h:shortest=1,")
+
+                Section.compute_frames(self.sections, self.output_video_frame_count)
+
+                for section in self.sections:
+                    x = section.start_frame * self.parameter.video_width / self.output_video_frame_count
+                    w = section.frame_count * self.parameter.video_width / self.output_video_frame_count
+                    config_file.write(f"drawbox="
+                                      f"x={x}:y=ih-50:w={w-1}:h=50:t=fill:c=#00005555,"
+                                      f"drawtext=x={x}+({w}-tw)/2:y=h-50+(50-th)/2:fontsize=24:"
+                                      f"fontcolor=white:text='{section.title}':font='Microsoft YaHei',")
 
         # Use ffmpeg filter to cut videos directly if possible.
         hw_encoder = self.select_encoder()
@@ -163,7 +191,7 @@ class DirectVideoOutput(BaseOutput):
         do_shell(
             f'ffmpeg -thread_queue_size 1024 '
             f'-y -filter_complex_script "{self.parameter.temp_folder}/filter_script.txt" '
-            f'-i "{self.parameter.input_file}" {hw_encoder} -b:v {self.parameter.bit_rate}k "{self.parameter.output_file}"'
+            f'-i "{self.parameter.input_file}" {hw_encoder} "{self.parameter.output_file}"'
         )
 
         if not os.path.exists(self.parameter.output_file):
@@ -175,7 +203,6 @@ class DirectVideoOutput(BaseOutput):
             send2trash(self.parameter.input_file)
             os.rename(self.parameter.output_file, self.parameter.input_file)
             print(f"Output file: {self.parameter.output_file}")
-
 
 
 # Deprecated. Will be removed soon.

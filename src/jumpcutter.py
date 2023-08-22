@@ -1,4 +1,6 @@
-from editor import Editor
+import traceback
+
+from editor.editor import Editor
 from parameters import InputParameter
 import argparse
 import os
@@ -11,6 +13,7 @@ def execute(*args, input_file, **kwargs):
             editor.execute()
     except Exception as e:
         print(f"Error process file {input_file} with exception: {e}")
+        # traceback.print_exc()
 
 
 def main(*args, input_file=None, output_file=None, **kwargs):

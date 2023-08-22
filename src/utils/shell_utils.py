@@ -1,5 +1,6 @@
+import os
 import subprocess
-import os, sys
+import sys
 
 
 def get_script_path():

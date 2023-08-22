@@ -1,13 +1,14 @@
 import argparse
+import datetime
 import math
 import re
-import sys
 
 import numpy as np
 from scipy.io import wavfile
+from timecode import Timecode
 
-import io_utils
-from shell_utils import do_shell, STRING
+from utils import io_utils
+from utils.shell_utils import do_shell, STRING
 
 
 def get_max_volume(s):
@@ -18,7 +19,9 @@ def get_max_volume(s):
 
 class InputParameter:
 
-    def __init__(self, *args, input_file=None,
+    def __init__(self, *args,
+                 input_file=None,
+                 input_sections=None,
                  url=None,
                  output_type=None,
                  output_file=None,
@@ -40,6 +43,11 @@ class InputParameter:
             description='Modifies a video file to play at different speeds '
                         'when there is sound vs. silence.')
         parser.add_argument('--input_file', type=str, help='the video file you want modified')
+        parser.add_argument(
+            '--input_sections', type=str,
+            help='The file contains video sections information. '
+                 'Each section contains a start time and a title like "00:12 section 1" separated by new lines.'
+        )
         parser.add_argument('--output_type', type=str, default="video", help='output type: video, edl')
         parser.add_argument('--url', type=str, help='A youtube url to download and process')
         parser.add_argument('--output_file', type=str, default="",
@@ -68,7 +76,7 @@ class InputParameter:
         parser.add_argument('--frame_quality', type=int, default=3,
                             help="quality of frames to be extracted from input video. "
                                  "1 is highest, 31 is lowest, 3 is the default.")
-        parser.add_argument('--temp_folder', type=str, default=".temp",
+        parser.add_argument('--temp_folder', type=str,
                             help="temp folder for intermediates process.")
 
         parser.add_argument('--keep_start', type=int, default=0,
@@ -80,7 +88,7 @@ class InputParameter:
 
         args = parser.parse_args()
 
-        self.temp_folder = temp_folder or args.temp_folder
+        self.temp_folder = temp_folder or args.temp_folder or f".jumpcutter-{datetime.datetime.now().timestamp()}"
 
         self.frame_rate = frame_rate or args.frame_rate
         self.sample_rate = sample_rate or args.sample_rate
@@ -93,6 +101,7 @@ class InputParameter:
             self.input_file = io_utils.download_file(args.url)
         else:
             self.input_file = input_file or args.input_file
+        self.input_sections = input_sections or args.input_sections
 
         # input_file is required
         if not self.input_file:
@@ -103,7 +112,7 @@ class InputParameter:
 
         self.output_type = output_type or args.output_type
         self.output_file = output_file or args.output_file
-        self.replace = self.output_type != 'edl' and not args.output_file
+        self.replace = self.output_type != 'edl' and not self.output_file
         if self.replace:
             print("The input file will be replaced with the output file.")
         self.mapping = mapping or args.mapping
@@ -131,17 +140,37 @@ class InputParameter:
         auto_detected_frame_rate = None
         auto_detected_bit_rate = None
         for line in video_parameters:
-            m = re.search(r'Stream #.*Video.* (\d+) kb/s.*?(\d+) fps', line)
-            if m is not None:
-                auto_detected_bit_rate = float(m.group(1))
-                auto_detected_frame_rate = float(m.group(2))
+            match = re.search(r'Duration: ((\d{2}):(\d{2}):(\d{2})[;:.](\d+)), ', line)
+            if match:
+                self.duration = match.group(1)
+            else:
+                # Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661),
+                # yuv420p(progressive), 1920x1080 [SAR 1:1 DAR 16:9], 131 kb/s, 30 fps, 30 tbr,
+                # 30k tbn (default)
+                match = re.search(r'Stream #.*Video.*, (\d+)x(\d+) .* (\d+) kb/s.*?(\d+) fps', line)
+                if match is not None:
+                    self.video_width = int(match.group(1))
+                    self.video_height = int(match.group(2))
+                    auto_detected_bit_rate = float(match.group(3))
+                    auto_detected_frame_rate = float(match.group(4))
+
+        if not self.video_width:
+            raise RuntimeError("Video info parse error.")
 
         self.bit_rate = auto_detected_bit_rate or self.bit_rate
         self.frame_rate = auto_detected_frame_rate or self.frame_rate
         self.samples_per_frame = self.audio_sample_rate / self.frame_rate
 
         self.audio_frame_count = int(math.ceil(self.audio_sample_count / self.samples_per_frame))
+
+        if self.duration:
+            tc = Timecode(self.frame_rate, start_timecode=self.duration)
+            self.duration = tc.secs
+            self.video_frame_count = tc.frames
+        else:
+            raise RuntimeError("Video duration parse error.")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         io_utils.delete_path(self.temp_folder)
+        pass
