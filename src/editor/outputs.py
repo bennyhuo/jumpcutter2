@@ -110,6 +110,7 @@ class DirectVideoOutput(BaseOutput):
         self.audio_edit_config = []
         self.video_edit_config = []
 
+        self.sections = []
         if self.parameter.input_sections:
             with open(self.parameter.input_sections, 'r', encoding='utf-8') as toc_file:
                 self.sections = Section.parse(toc_file.read(), self.parameter.frame_rate)
