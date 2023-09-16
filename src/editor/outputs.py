@@ -163,15 +163,15 @@ class DirectVideoOutput(BaseOutput):
     def close(self):
         super().close()
         with open(f"{self.parameter.temp_folder}/filter_script.txt", "w", encoding='utf-8') as config_file:
-            config_file.write("select='not(\n")
-            config_file.write("+".join(self.video_edit_config))
-            config_file.write(")',setpts=N/FR/TB[a]; \n")
-
-            config_file.write("aselect='not(\n")
-            config_file.write("+".join(self.audio_edit_config))
-            config_file.write(")', asetpts=N/SR/TB")
-
             if self.sections:
+                config_file.write("select='not(\n")
+                config_file.write("+".join(self.video_edit_config))
+                config_file.write(")',setpts=N/FR/TB[a]; \n")
+
+                config_file.write("aselect='not(\n")
+                config_file.write("+".join(self.audio_edit_config))
+                config_file.write(")', asetpts=N/SR/TB")
+
                 config_file.write(";\n")
                 config_file.write(f"color=c=#55555555:s={self.parameter.video_width}x50[bar];\n")
                 config_file.write(f"[a][bar]overlay=w*n/{self.output_video_frame_count}-w:H-h:shortest=1,")
@@ -185,6 +185,14 @@ class DirectVideoOutput(BaseOutput):
                                       f"x={x}:y=ih-50:w={w-1}:h=50:t=fill:c=#00005555,"
                                       f"drawtext=x={x}+({w}-tw)/2:y=h-50+(50-th)/2:fontsize=24:"
                                       f"fontcolor=white:text='{section.title}':font='Microsoft YaHei',")
+            else:
+                config_file.write("select='not(\n")
+                config_file.write("+".join(self.video_edit_config))
+                config_file.write(")',setpts=N/FR/TB; \n")
+
+                config_file.write("aselect='not(\n")
+                config_file.write("+".join(self.audio_edit_config))
+                config_file.write(")', asetpts=N/SR/TB")
 
         # Use ffmpeg filter to cut videos directly if possible.
         hw_encoder = self.select_encoder()
