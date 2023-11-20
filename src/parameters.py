@@ -153,7 +153,7 @@ class InputParameter:
                 # Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661),
                 # yuv420p(progressive), 1920x1080 [SAR 1:1 DAR 16:9], 131 kb/s, 30 fps, 30 tbr,
                 # 30k tbn (default)
-                match = re.search(r'Stream #.*Video.*, (\d+)x(\d+) .* (\d+) kb/s.*?(\d+) fps', line)
+                match = re.search(r'Stream #.*Video.*, (\d+)x(\d+).* (\d+) kb/s.*?(\d+) fps', line)
                 if match is not None:
                     self.video_width = int(match.group(1))
                     self.video_height = int(match.group(2))
