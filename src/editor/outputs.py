@@ -140,14 +140,16 @@ class DirectVideoOutput(BaseOutput):
             h264_encoders = [encoder[1] for encoder in [
                 line.strip().split(' ', 2)[:2] for line in
                 take_until(result.splitlines(), lambda line: line.strip() == '------')
-            ] if encoder[0] == 'V....D' and encoder[1].startswith('h264')]
+            ] if encoder[0] == 'V....D' and '264' in encoder[1]]
 
-            print(f'hardware h264 encoders: {h264_encoders}')
+            print(f'h264 encoders: {h264_encoders}')
 
             if not h264_encoders:
                 return ''
 
-            preferred_encoders = ['h264_nvenc', 'h264_videotoolbox']
+            # h264_videotoolbox seems to always produce blurry videos.
+            # preferred_encoders = ['h264_nvenc', 'h264_videotoolbox']
+            preferred_encoders = ['h264_nvenc', 'libx264']
             selected_encoder = None
             for preferred_encoder in preferred_encoders:
                 if preferred_encoder in h264_encoders:
