@@ -6,7 +6,7 @@ from audiotsm import phasevocoder
 from audiotsm.io.array import ArrayReader, ArrayWriter
 
 from editor.edit_point import EditPoint
-from editor.outputs import EdlOutput, DirectVideoOutput, AudioOutput
+from editor.outputs import EdlOutput, DirectVideoOutput
 from parameters import InputParameter, get_max_volume
 
 
@@ -54,8 +54,7 @@ class Editor:
         return edit_points[1:]
 
     def get_output(self):
-        return AudioOutput(parameter=self.parameter) \
-            if self.parameter.audio_only else EdlOutput(parameter=self.parameter) \
+        return EdlOutput(parameter=self.parameter) \
             if self.parameter.output_type == 'edl' else DirectVideoOutput(parameter=self.parameter)
 
     def fade_out_silence(self, audio_data):
@@ -96,7 +95,7 @@ class Editor:
             end_output_frame = int(math.ceil(end_frame / self.parameter.samples_per_frame))
 
             output.apply_edit_point(edit_point, altered_audio_data, start_output_frame, end_output_frame)
-            self.print_progress(end_output_frame, self.parameter.audio_frame_count)
+            self.print_progress(edit_point.end_frame, self.parameter.audio_frame_count)
 
             start_frame = end_frame
 
@@ -106,7 +105,11 @@ class Editor:
         progress = current * 100 / total
         if progress - self.last_progress > 1:
             self.last_progress = progress
-
-            sys.stdout.write('\r')
-            sys.stdout.write(f"Processing audio data: [{('=' * int(progress / 5)):-20s}] {progress}%({current}/{total})")
+            sys.stdout.write(f"\rAnalyzing [{('=' * int(progress / 5)):20s}] {progress:.1f}%({current}/{total})")
             sys.stdout.flush()
+        elif current == total:
+            self.last_progress = progress
+            sys.stdout.write(f"\rAnalyzing [{('=' * int(progress / 5)):20s}] {progress:.1f}%({current}/{total})\n")
+            sys.stdout.flush()
+
+
