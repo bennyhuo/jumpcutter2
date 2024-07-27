@@ -145,6 +145,9 @@ class InputParameter:
         video_parameters = do_shell(f'ffmpeg -i "{self.input_file}"', STRING, 'utf-8').split('\n')
         auto_detected_frame_rate = None
         auto_detected_bit_rate = None
+
+        self.video_width = None
+        self.video_height = None
         for line in video_parameters:
             match = re.search(r'Duration: ((\d{2}):(\d{2}):(\d{2})[;:.](\d+)), ', line)
             if match:
@@ -161,7 +164,7 @@ class InputParameter:
                     auto_detected_frame_rate = float(match.group(4))
 
         if not self.video_width:
-            raise RuntimeError("Video info parse error.")
+            self.audio_only = True
 
         self.bit_rate = auto_detected_bit_rate or self.bit_rate
         self.frame_rate = auto_detected_frame_rate or self.frame_rate
@@ -179,4 +182,3 @@ class InputParameter:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         io_utils.delete_path(self.temp_folder)
-        pass

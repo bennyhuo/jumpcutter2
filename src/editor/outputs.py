@@ -216,6 +216,35 @@ class DirectVideoOutput(BaseOutput):
             print(f"Output file: {self.parameter.output_file}")
 
 
+class AudioOutput(BaseOutput):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.parameter.output_file:
+            self.parameter.output_file = os.path.join(
+                self.input_file_dir,
+                f'{self.input_file_name_without_extension}_edited{self.input_file_name[self.input_file_name.rfind("."):]}'
+            )
+
+        self.output_audio_data = np.zeros((0, self.parameter.audio_data.shape[1]))
+
+    def apply_edit_point(self, edit_point: EditPoint, audio_data, start_output_frame, end_output_frame):
+        super().apply_edit_point(edit_point, audio_data, start_output_frame, end_output_frame)
+
+        self.output_audio_data = np.concatenate(
+            (self.output_audio_data, audio_data / self.parameter.max_audio_volume))
+
+    def close(self):
+        super().close()
+        wavfile.write(f'{self.parameter.temp_folder}/audioNew.wav', self.parameter.sample_rate, self.output_audio_data)
+
+        do_shell(
+            f'ffmpeg -thread_queue_size 1024 '
+            f'-i "{self.parameter.temp_folder}/audioNew.wav" -strict -2 "{self.parameter.output_file}"'
+        )
+
+
 # Deprecated. Will be removed soon.
 class LegacyVideoOutput(BaseOutput):
 
