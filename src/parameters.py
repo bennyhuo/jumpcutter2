@@ -162,6 +162,7 @@ class InputParameter:
             self.audio_only = True
             self.input_sections = None
         else:
+            self.audio_only = False
             if not self.input_sections:
                 detected_section_file = f"{self.input_file.rsplit('.', 1)[0]}.sec"
                 if os.path.exists(detected_section_file):

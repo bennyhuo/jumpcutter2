@@ -103,13 +103,12 @@ class Editor:
 
     def print_progress(self, current, total):
         progress = current * 100 / total
-        if progress - self.last_progress > 1:
-            self.last_progress = progress
-            sys.stdout.write(f"\rAnalyzing [{('=' * int(progress / 5)):20s}] {progress:.1f}%({current}/{total})")
-            sys.stdout.flush()
-        elif current == total:
+        if current == total:
             self.last_progress = progress
             sys.stdout.write(f"\rAnalyzing [{('=' * int(progress / 5)):20s}] {progress:.1f}%({current}/{total})\n")
             sys.stdout.flush()
-
+        elif progress - self.last_progress > 1:
+            self.last_progress = progress
+            sys.stdout.write(f"\rAnalyzing [{('=' * int(progress / 5)):20s}] {progress:.1f}%({current}/{total})")
+            sys.stdout.flush()
 
