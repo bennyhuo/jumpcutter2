@@ -3,6 +3,7 @@ import datetime
 import math
 import os.path
 import re
+import tempfile
 
 import numpy as np
 from scipy.io import wavfile
@@ -89,7 +90,7 @@ class InputParameter:
 
         args = parser.parse_args()
 
-        self.temp_folder = temp_folder or args.temp_folder or f".jumpcutter-{datetime.datetime.now().timestamp()}"
+        self.temp_folder = temp_folder or args.temp_folder or tempfile.mkdtemp('jumpcut_')
 
         self.frame_rate = frame_rate or args.frame_rate
         self.sample_rate = sample_rate or args.sample_rate
