@@ -136,7 +136,7 @@ class DirectVideoOutput(BaseOutput):
 
     def select_encoder(self):
         if self.parameter.use_hardware_acc:
-            result = do_shell(f'ffmpeg -encoders', stdout=STRING)
+            result = do_shell(f'ffmpeg -hide_banner -encoders', stdout=STRING)
             h264_encoders = [encoder[1] for encoder in [
                 line.strip().split(' ', 2)[:2] for line in
                 take_until(result.splitlines(), lambda line: line.strip() == '------')
@@ -201,7 +201,7 @@ class DirectVideoOutput(BaseOutput):
         hw_encoder = self.select_encoder()
 
         do_shell(
-            f'ffmpeg -thread_queue_size 1024 '
+            f'ffmpeg -hide_banner -v warning -stats -thread_queue_size 1024 '
             f'-y -filter_complex_script "{self.parameter.temp_folder}/filter_script.txt" '
             f'-i "{self.parameter.input_file}" {hw_encoder} "{self.parameter.output_file}"'
         )
@@ -232,7 +232,7 @@ class LegacyVideoOutput(BaseOutput):
             )
 
         do_shell(
-            f'ffmpeg -i "{self.parameter.input_file}" -qscale:v {str(self.parameter.frame_quality)} "{self.parameter.temp_folder}/frame%06d.jpg" -hide_banner')
+            f'ffmpeg -hide_banner -i "{self.parameter.input_file}" -qscale:v {str(self.parameter.frame_quality)} "{self.parameter.temp_folder}/frame%06d.jpg" -hide_banner')
 
         self.last_existing_frame = None
         self.output_audio_data = np.zeros((0, self.parameter.audio_data.shape[1]))
@@ -268,6 +268,6 @@ class LegacyVideoOutput(BaseOutput):
         wavfile.write(f'{self.parameter.temp_folder}/audioNew.wav', self.parameter.sample_rate, self.output_audio_data)
 
         do_shell(
-            f'ffmpeg -thread_queue_size 1024 -framerate {str(self.parameter.frame_rate)} '
+            f'ffmpeg -hide_banner -thread_queue_size 1024 -framerate {str(self.parameter.frame_rate)} '
             f'-i "{self.parameter.temp_folder}/newFrame%06d.jpg" -i "{self.parameter.temp_folder}/audioNew.wav" -strict -2 "{self.parameter.output_file}"'
         )
