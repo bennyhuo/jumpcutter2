@@ -99,6 +99,10 @@ class Editor:
 
             start_frame = end_frame
 
+        last_output_frame = math.ceil(start_frame / self.parameter.samples_per_frame)
+        print(f"Frames to be kept: {last_output_frame}/{self.parameter.audio_frame_count}, "
+              f"{100 - last_output_frame * 100.0 / self.parameter.audio_frame_count:.1f}% removed")
+
         output.close()
 
     def print_progress(self, current, total):

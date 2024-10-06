@@ -214,6 +214,8 @@ class DirectVideoOutput(BaseOutput):
 
             send2trash(self.parameter.input_file)
             os.rename(self.parameter.output_file, self.parameter.input_file)
+            print(f"Output file: {self.parameter.input_file}")
+        else:
             print(f"Output file: {self.parameter.output_file}")
 
 
