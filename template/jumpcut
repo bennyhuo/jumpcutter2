@@ -1,0 +1,31 @@
+#!/bin/zsh
+source {{SCRIPT_ROOT}}/venv/bin/activate
+
+function doJumpCutOnFile() {
+  python3 {{SCRIPT_ROOT}}/src/jumpcutter.py --input_file $1 --silent_speed 9999 --frame_margin 3 --keep_start 2 --keep_end 2 --use_hardware_acc 1 --silent_threshold 0.005
+}
+
+function doJumpCutOnDir() {
+  dir=$1
+  subfiles=("$dir"/*)
+  for subfile in "${subfiles[@]}"; do
+    doJumpCut $subfile
+  done
+}
+
+function doJumpCut() {
+  file=$1
+  if [ -d "$file" ]; then
+    doJumpCutOnDir $file
+  else
+    doJumpCutOnFile $file
+  fi
+}
+
+files=("$@")
+for file in "${files[@]}"; do
+  echo "Process $file..."
+  doJumpCut $file
+done
+
+deactivate
