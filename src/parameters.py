@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import json
 import math
 import os.path
 import re
@@ -164,11 +165,8 @@ class InputParameter:
             self.input_sections = None
         else:
             self.audio_only = False
-            if not self.input_sections:
-                detected_section_file = f"{self.input_file.rsplit('.', 1)[0]}.sec"
-                if os.path.exists(detected_section_file):
-                    self.input_sections = detected_section_file
-                    print(f"Auto detected sections file: {detected_section_file}")
+            self.detect_sections()
+
 
         self.bit_rate = auto_detected_bit_rate or self.bit_rate
         self.frame_rate = auto_detected_frame_rate or self.frame_rate
@@ -186,3 +184,30 @@ class InputParameter:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         io_utils.delete_path(self.temp_folder)
+
+    def detect_sections(self):
+        if self.input_sections:
+            return
+
+        detected_section_file = f"{self.input_file.rsplit('.', 1)[0]}.sec"
+        if os.path.exists(detected_section_file):
+            self.input_sections = detected_section_file
+            print(f"Auto detected sections file: {detected_section_file}")
+            return
+
+        # detect sections from video
+        raw_chapters = do_shell(f'ffprobe -i {self.input_file} -print_format json -show_chapters -loglevel fatal',
+                                STRING)
+        parsed_chapters = json.loads(raw_chapters)
+        print(parsed_chapters)
+
+        if 'chapters' in parsed_chapters:
+            chapters = parsed_chapters['chapters']
+            if chapters:
+                with open(detected_section_file, 'w') as file:
+                    for chapter in chapters:
+                        start_time_secs = int(float(chapter['start_time']))
+                        start_time = f'{start_time_secs // 60}:{start_time_secs % 60}'
+                        title = chapter['tags']['title']
+                        file.write(f'{start_time} {title}\n')
+                self.input_sections = detected_section_file
