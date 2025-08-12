@@ -208,6 +208,8 @@ class InputParameter:
                     for chapter in chapters:
                         start_time_secs = int(float(chapter['start_time']))
                         start_time = f'{start_time_secs // 60}:{start_time_secs % 60}'
+                        end_time_secs = int(float(chapter['end_time']))
+                        end_time = f'{end_time_secs // 60}:{end_time_secs % 60}'
                         title = chapter['tags']['title']
-                        file.write(f'{start_time} {title}\n')
+                        file.write(f'{start_time} {end_time} {title}\n')
                 self.input_sections = detected_section_file

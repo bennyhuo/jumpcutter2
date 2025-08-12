@@ -29,7 +29,14 @@ class Section:
     @staticmethod
     def parse(text: str, frame_rate):
         def parse_section(section_text: str):
-            start_time, title = re.split(r"\s+", section_text, maxsplit=1)
+            splits = re.split(r"\s+", section_text.strip())
+            if len(splits) == 2:
+                start_time, title = splits
+            elif len(splits) == 3:
+                # we just ignore the end_time here.
+                start_time, _, title = splits
+            else:
+                raise Exception(f"Invalid section: {section_text}")
             start_frame = Timecode(frame_rate, start_timecode=format_timecode(start_time)).frames
             return Section(start_frame, title)
 
